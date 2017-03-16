@@ -1,0 +1,12 @@
+path: .
+report: git_analysis.xlsx
+excluded_files:
+  - '^e2e-test'
+  - 'gitignore'
+  - '\.md$'
+  - '\.yaml$'
+  - '\.yml$'
+  - 'Dockerfile',
+  - 'TODO'
+  - 'Makefile'
+  - '\.xlsx$'
