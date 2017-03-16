@@ -13,3 +13,9 @@ You need to install the following python packages:
 
 Edit the file git_analysis.py and add the path to the repository and the list of the files that should be exluded from the analysis and the name of the report file in the lines 13-16
 Then run the script `python git_analysis.py`
+
+## Future develpment
+
+* Remove the settings from the code and put them into a settins file or as command line parameters
+* Refactor the code: remove unused code
+* In the excel report: add for each file a brief hisory of the last 5 revisions: number of lines of code and complexity metric
