@@ -148,7 +148,7 @@ def collect_stats_per_file(repo):
                 stats["insertions"]
             files[old_name]["deletions"] = files[old_name]["deletions"] + \
                 stats["deletions"]
-            if stats["deletions"] == stats["lines"]:
+            if stats["deletions"] == stats["lines"] and stats["lines"] > 0:
                 files[old_name]["deleted"] = True
             else:
                 files[old_name]["complexity"].append({
@@ -394,6 +394,7 @@ def create_xlsx_report(xlsx_file, commit_stats, file_stats):
     row = 1
     for file in sorted([(files[file]["name"], file) for file in file_stats]):
         file_data = file_stats[file[1]]
+        print(file_data)
         if file_data["deleted"]:
             continue
         complexity_stats = file_data["complexity"][0]["stats"]
