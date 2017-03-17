@@ -9,12 +9,32 @@ import re
 from math import sqrt
 from itertools import zip_longest
 import sys
+import yaml
 
-path = 'c:\\Users\\Andrey\\Documents\\tyntec\\bosko'
-ignored_files = ['^e2e-test', 'gitignore', '\.md$', '\.yaml$', 'Dockerfile',
-                 'TODO', 'Makefile']
-xlsx_report = 'report.xlsx'
+
+path = ''
+ignored_files = []
+xlsx_report = ''
 ignore_one_char_lines = True
+
+
+def load_settings():
+    settings_file = 'git_analysis.yml'
+    global path
+    global ignored_files
+    global xlsx_report
+    with open(settings_file) as yml_file:
+        try:
+            file_data = yaml.load(yml_file)
+            path = file_data["path"]
+            ignored_files = file_data["ignored_files"]
+            xlsx_report = file_data["report"]
+        except yaml.YAMLError as e:
+            print("Cannot parse the settings file {}: {}".format(
+                settings_file, str(e)))
+            exit(1)
+        except KeyError as e:
+            print("Cannot find a required config parameter", str(e))
 
 
 def import_repo(path):
@@ -407,6 +427,7 @@ def create_xlsx_report(xlsx_file, commit_stats, file_stats):
     print("Done")
 
 
+load_settings()
 repo = import_repo(path)
 print("Repository imported")
 # print_config(repo)
