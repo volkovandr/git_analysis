@@ -394,7 +394,6 @@ def create_xlsx_report(xlsx_file, commit_stats, file_stats):
     row = 1
     for file in sorted([(files[file]["name"], file) for file in file_stats]):
         file_data = file_stats[file[1]]
-        print(file_data)
         if file_data["deleted"]:
             continue
         complexity_stats = file_data["complexity"][0]["stats"]
