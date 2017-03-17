@@ -159,9 +159,10 @@ def collect_stats_per_file(repo):
 
 
 def print_file_stats(files, print_deleted):
-    print("{:50} {:50} {:8} {:8} {:5} {:5} {:5} {:5} {:5} {:4} {:4} {:4}".format(
-        "Recent name", "Original name", "deleted", "revisions", "ins",
-        "dels", "lines", "lines", "code", "avg", "dev", "max"))
+    print(
+        "{:50} {:50} {:8} {:8} {:5} {:5} {:5} {:5} {:5} {:4} {:4} {:4}"
+        .format("Recent name", "Original name", "deleted", "revisions", "ins",
+                "dels", "lines", "lines", "code", "avg", "dev", "max"))
     for file in sorted([(files[file]["name"], file) for file in files]):
         file_data = files[file[1]]
         if file_data["deleted"] and not print_deleted:
@@ -170,8 +171,10 @@ def print_file_stats(files, print_deleted):
         complexity_str = "{:>5} {:>5} {:>4} {:>4} {:>4}".format(
             complexity_stats["lines total"],
             complexity_stats["lines code"],
-            round(complexity_stats["stats"]["avg"], 2) if complexity_stats["stats"]["avg"] else "",
-            round(complexity_stats["stats"]["stddev"], 2) if complexity_stats["stats"]["stddev"] else "",
+            round(complexity_stats["stats"]["avg"], 2)
+            if complexity_stats["stats"]["avg"] else "",
+            round(complexity_stats["stats"]["stddev"], 2)
+            if complexity_stats["stats"]["stddev"] else "",
             complexity_stats["stats"]["max"])
         print("{:50} {:50} {:8} {:8} {:5} {:5} {:5} {}".format(
             file[0],
@@ -370,6 +373,8 @@ def create_xlsx_report(xlsx_file, commit_stats, file_stats):
                       "values": "=G2:G" + str(row + 1),
                       "y2_axis": True})
     chart.set_x_axis({'reverse': True})
+    chart.set_y2_axis({"name": "Lines of code"})
+    chart.set_y_axis({"name": "Complexity"})
     commit_stat_sheet.insert_chart(
         'A5', chart,
         options={
