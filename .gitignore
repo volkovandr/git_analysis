@@ -1,3 +1,4 @@
 *.xlsx
+*.xlsx#
 venv/
 *.sublime-*
