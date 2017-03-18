@@ -41,8 +41,7 @@ def import_repo(path):
     try:
         return Repo(path)
     except InvalidGitRepositoryError as e:
-        print("Invalid git repository {}".format(
-            str(e)))
+        print("Invalid git repository {}".format(str(e)))
         exit(1)
 
 
@@ -53,9 +52,7 @@ def process_renamed_file(filename):
     When no renaming happened then both old and new names are set to
     the same values
     '''
-    re_match_simple = re.search(
-        "^(?P<old>.+)( => )(?P<new>.+)$",
-        filename)
+    re_match_simple = re.search("^(?P<old>.+)( => )(?P<new>.+)$", filename)
     if not re.search(".+ => .+", filename):
         return filename, filename
     re_match_curly = re.search(
@@ -71,15 +68,15 @@ def process_renamed_file(filename):
         after = ""
     old = match.group("old")
     new = match.group("new")
-    return ("{}{}{}".format(before, old, after),
-            "{}{}{}".format(before, new, after))
+    return (
+        "{}{}{}".format(before, old, after),
+        "{}{}{}".format(before, new, after))
 
 
 def ignore_file(filename):
     for ignore_pattern in ignored_files:
         if re.search(ignore_pattern, filename):
             return True
-    return False
 
 
 def collect_stats_per_file(repo):
@@ -96,9 +93,9 @@ def collect_stats_per_file(repo):
                 continue
             stats = file_stats[file]
             if new_name not in files:
-                files[old_name] = {"commits": 0, "lines": 0, "insertions": 0,
-                                   "deletions": 0, "deleted": False,
-                                   "name": new_name, "complexity": []}
+                files[old_name] = {
+                    "commits": 0, "lines": 0, "insertions": 0, "deletions": 0,
+                    "deleted": False, "name": new_name, "complexity": []}
             if old_name != new_name and new_name in files:
                 files[old_name] = files[new_name]
                 del files[new_name]
@@ -135,44 +132,41 @@ def process_indent_stats(indent_stats):
     else:
         stddev = None
     return {
-        "avg": avg,
-        "sum": sum_,
-        "cnt": cnt,
-        "max": max_,
-        "stddev": stddev,
-        "hist": indent_stats
-    }
+        "avg": avg, "sum": sum_, "cnt": cnt, "max": max_,
+        "stddev": stddev, "hist": indent_stats}
+
+
+def remove_python_docstring(lines):
+    result = []
+    wait_for_docstring = True
+    in_docstring = False
+    for line in lines:
+        linestrip = line.strip()
+        if wait_for_docstring and line.startswith('#!'):
+            continue
+        if wait_for_docstring and (
+                linestrip.startswith("'''") or linestrip.startswith('"""')):
+            in_docstring = True
+            wait_for_docstring = False
+            if linestrip == "'''" or linestrip == '"""':
+                continue
+        if in_docstring and (
+                linestrip.endswith("'''") or linestrip.endswith('"""')):
+            in_docstring = False
+            continue
+        if in_docstring:
+            continue
+        result.append(line)
+        if (linestrip.startswith('def ') or linestrip.startswith("class ")):
+            wait_for_docstring = True
+    return result
 
 
 def analyze_complexity(blob):
-    def remove_python_docstring(lines):
-        result = []
-        wait_for_docstring = True
-        in_docstring = False
-        for line in lines:
-            if wait_for_docstring and line.startswith('#!'):
-                continue
-            if wait_for_docstring and (line.strip().startswith("'''") or
-                                       line.strip().startswith('"""')):
-                in_docstring = True
-                wait_for_docstring = False
-                if line.strip() == "'''" or line.strip() == '"""':
-                    continue
-            if in_docstring and (line.strip().endswith("'''") or
-                                 line.strip().endswith('"""')):
-                in_docstring = False
-                continue
-            if in_docstring:
-                continue
-            result.append(line)
-            if (line.strip().startswith('def ') or
-                    line.strip().startswith("class ")):
-                wait_for_docstring = True
-        return result
-
     lines = blob.data_stream.read().decode().split('\n')
-    lines_filtered = [l for l in lines if len(l.strip()) > (
-        1 if ignore_one_char_lines else 0)]
+    lines_filtered = [
+        l for l in lines
+        if len(l.strip()) > (1 if ignore_one_char_lines else 0)]
     if blob.mime_type == 'text/x-python':
         lines_filtered = remove_python_docstring(lines_filtered)
     indent_stats = {}
@@ -196,8 +190,7 @@ def collect_complexity_stats_from_file_tree(tree):
             if ignore_file(item.path):
                 continue
             result.append({
-                "path": item.path,
-                "size": item.size,
+                "path": item.path, "size": item.size,
                 "mime_type": item.mime_type,
                 "complexity": analyze_complexity(item)})
         elif type(item).__name__ == 'Tree':
@@ -232,9 +225,9 @@ def collect_stats_per_commit(repo):
             indent_hist = join_histogram(
                 indent_hist, tree_item["complexity"]["stats"]["hist"])
         stats = process_indent_stats(indent_hist)
-        result.append(
-            {"commit": str(commit), "stats": stats,
-             "date": datetime.datetime.fromtimestamp(
+        result.append({
+            "commit": str(commit), "stats": stats,
+            "date": datetime.datetime.fromtimestamp(
                 commit.committed_date).strftime('%Y-%m-%d %H:%M:%S')})
     print("Done")
     return result
@@ -287,32 +280,24 @@ def create_xlsx_report(xlsx_file, commit_stats, file_stats):
     commit_stat_sheet.set_column(2, 6, width=12)
 
     chart = workbook.add_chart({"type": "line"})
-    chart.add_series({"name": "Lines of code",
-                      "values": "=C2:C" + str(row + 1)})
-    chart.add_series({"name": "Complexity",
-                      "values": "=G2:G" + str(row + 1),
-                      "y2_axis": True})
+    chart.add_series({"name": "Lines of code", "values": "=C2:C" + row_str})
+    chart.add_series(
+        {"name": "Complexity", "values": "=G2:G" + row_str, "y2_axis": True})
     chart.set_x_axis({'reverse': True})
     chart.set_y2_axis({"name": "Lines of code"})
     chart.set_y_axis({"name": "Complexity"})
     commit_stat_sheet.insert_chart(
         'A5', chart,
-        options={
-            'x_offset': 0,
-            'y_offset': 0,
-            'x_scale': 2,
-            'y_scale': 2})
+        options={'x_offset': 0, 'y_offset': 0, 'x_scale': 2, 'y_scale': 2})
 
     file_sheet = workbook.add_worksheet("files")
     file_sheet.write(0, 0, "File", header_format)
     file_sheet.write(0, 1, "Revisions", header_format)
-    file_sheet.write(0, 2, "Lines code", header_format)
-    file_sheet.write(0, 3, "Avg indent", header_format)
-    file_sheet.write(0, 4, "Stddev indent", header_format)
-    file_sheet.write(0, 5, "Max indent", header_format)
-    file_sheet.write(0, 6, "Complexity", header_format)
+    file_sheet.write(0, 2, "Lines code last 5 revisions", header_format)
     file_sheet.write(0, 7, "Complexity in last 5 revisions", header_format)
-    file_sheet.write(0, 12, "Linex of code in last 5 revisions", header_format)
+    file_sheet.write(0, 12, "Avg indent", header_format)
+    file_sheet.write(0, 13, "Stddev indent", header_format)
+    file_sheet.write(0, 14, "Max indent", header_format)
     row = 1
     for file in sorted([(files[file]["name"], file) for file in file_stats]):
         file_data = file_stats[file[1]]
@@ -321,37 +306,25 @@ def create_xlsx_report(xlsx_file, commit_stats, file_stats):
         complexity_stats = file_data["complexity"][0]["stats"]
         file_sheet.write(row, 0, file_data["name"])
         file_sheet.write(row, 1, file_data["commits"])
-        file_sheet.write(row, 2, complexity_stats["lines code"])
-        file_sheet.write(row, 3, complexity_stats["stats"]["avg"],
-                         indent_format)
-        file_sheet.write(row, 4, complexity_stats["stats"]["stddev"],
-                         indent_format)
-        file_sheet.write(row, 5, complexity_stats["stats"]["max"],
-                         indent_format)
-        row_str = str(row + 1)
-        file_sheet.write_formula(
-            row, 6, '=F' + row_str + '+E' + row_str + '*10+D' + row_str + '*5',
-            indent_format,
-            value=(
-                (complexity_stats["stats"]["max"]
-                 if complexity_stats["stats"]["max"] else 0.0) +
-                (complexity_stats["stats"]["stddev"]
-                 if complexity_stats["stats"]["stddev"] else 0.0) * 10.0 +
-                (complexity_stats["stats"]["avg"]
-                 if complexity_stats["stats"]["avg"] else 0.0) * 5.0))
-        for revision in range(1, 5):
+        file_sheet.write(
+            row, 12, complexity_stats["stats"]["avg"], indent_format)
+        file_sheet.write(
+            row, 13, complexity_stats["stats"]["stddev"], indent_format)
+        file_sheet.write(
+            row, 14, complexity_stats["stats"]["max"], indent_format)
+        for revision in range(0, 5):
             if len(file_data["complexity"]) <= revision:
                 break
             complexity_stats = file_data["complexity"][revision]["stats"]
-            file_sheet.write(row, 7 + revision - 1, (
+            file_sheet.write(row, 7 + revision, round(
                 (complexity_stats["stats"]["max"]
                  if complexity_stats["stats"]["max"] else 0.0) +
                 (complexity_stats["stats"]["stddev"]
                  if complexity_stats["stats"]["stddev"] else 0.0) * 10.0 +
                 (complexity_stats["stats"]["avg"]
-                 if complexity_stats["stats"]["avg"] else 0.0) * 5.0))
-            file_sheet.write(row, 12 + revision - 1,
-                             complexity_stats["lines code"])
+                 if complexity_stats["stats"]["avg"] else 0.0) * 5.0, 3))
+            file_sheet.write(
+                row, 2 + revision, complexity_stats["lines code"])
         # print(file_data)
         row += 1
 
