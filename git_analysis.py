@@ -279,8 +279,6 @@ def get_stats_for_file(tree_info, file):
     for tree_item in tree_info:
         if tree_item["path"] == file:
             return tree_item["complexity"]
-    print("Cannot find file {} in the list {}".format(
-        file, [item["path"] for item in tree_info]))
 
 
 def join_histogram(a, b):
