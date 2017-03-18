@@ -311,6 +311,8 @@ def create_xlsx_report(xlsx_file, commit_stats, file_stats):
     file_sheet.write(0, 4, "Stddev indent", header_format)
     file_sheet.write(0, 5, "Max indent", header_format)
     file_sheet.write(0, 6, "Complexity", header_format)
+    file_sheet.write(0, 7, "Complexity in last 5 revisions", header_format)
+    file_sheet.write(0, 12, "Linex of code in last 5 revisions", header_format)
     row = 1
     for file in sorted([(files[file]["name"], file) for file in file_stats]):
         file_data = file_stats[file[1]]
@@ -337,11 +339,24 @@ def create_xlsx_report(xlsx_file, commit_stats, file_stats):
                  if complexity_stats["stats"]["stddev"] else 0.0) * 10.0 +
                 (complexity_stats["stats"]["avg"]
                  if complexity_stats["stats"]["avg"] else 0.0) * 5.0))
+        for revision in range(1, 5):
+            if len(file_data["complexity"]) <= revision:
+                break
+            complexity_stats = file_data["complexity"][revision]["stats"]
+            file_sheet.write(row, 7 + revision - 1, (
+                (complexity_stats["stats"]["max"]
+                 if complexity_stats["stats"]["max"] else 0.0) +
+                (complexity_stats["stats"]["stddev"]
+                 if complexity_stats["stats"]["stddev"] else 0.0) * 10.0 +
+                (complexity_stats["stats"]["avg"]
+                 if complexity_stats["stats"]["avg"] else 0.0) * 5.0))
+            file_sheet.write(row, 12 + revision - 1,
+                             complexity_stats["lines code"])
         # print(file_data)
         row += 1
 
     file_sheet.set_column(0, 0, width=50)
-    file_sheet.set_column(1, 6, width=12)
+    file_sheet.set_column(1, 16, width=10)
 
     try:
         workbook.close()
