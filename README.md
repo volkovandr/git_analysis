@@ -16,5 +16,4 @@ Then run the script `python git_analysis.py`, it will look for the config file i
 
 ## Future develpment
 
-* Refactor the code: remove unused code
 * In the excel report: add for each file a brief hisory of the last 5 revisions: number of lines of code and complexity metric

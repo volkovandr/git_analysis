@@ -46,45 +46,6 @@ def import_repo(path):
         exit(1)
 
 
-def print_config(repo):
-    print("Current config:")
-    reader = repo.config_reader()
-    for section in reader.sections():
-        for option in reader.options(section):
-            print("  {}.{} = {}".format(
-                section, option, reader.get_value(section, option)))
-
-
-def print_branches(repo):
-    print("Branches:")
-    for head in repo.heads:
-        print("  {}".format(head))
-    print("Current branch:", repo.head.reference)
-
-
-def print_commits(repo, print_files):
-    for commit in repo.iter_commits():
-        print("Commit: {}".format(commit))
-        print("  Commit date: {}".format(
-            datetime.datetime.fromtimestamp(
-                commit.committed_date
-            ).strftime('%Y-%m-%d %H:%M:%S')))
-        print("  Author: {}".format(commit.author))
-        print("  Summary: {}".format(commit.summary))
-        print("  Stats: {}".format(commit.stats.total))
-        if print_files:
-            print("  {:80} {:>5} {:>5} {:>5}".format(
-                "Files:", "ins", "dels", "lines"))
-            file_stats = commit.stats.files
-            for file in file_stats:
-                stats = file_stats[file]
-                inss = stats["insertions"]
-                dels = stats["deletions"]
-                lins = stats["lines"]
-                print("    {:78} {:>5} {:>5} {:>5}".format(
-                    file, inss, dels, lins))
-
-
 def process_renamed_file(filename):
     '''Processes renamed files in git
     Takes filename that may have a format /path/{old_name => new_name}
@@ -157,35 +118,6 @@ def collect_stats_per_file(repo):
                 files[old_name]["deleted"] = True
     print("Done")
     return files
-
-
-def print_file_stats(files, print_deleted):
-    print(
-        "{:50} {:50} {:8} {:8} {:5} {:5} {:5} {:5} {:5} {:4} {:4} {:4}"
-        .format("Recent name", "Original name", "deleted", "revisions", "ins",
-                "dels", "lines", "lines", "code", "avg", "dev", "max"))
-    for file in sorted([(files[file]["name"], file) for file in files]):
-        file_data = files[file[1]]
-        if file_data["deleted"] and not print_deleted:
-            continue
-        complexity_stats = file_data["complexity"][0]["stats"]
-        complexity_str = "{:>5} {:>5} {:>4} {:>4} {:>4}".format(
-            complexity_stats["lines total"],
-            complexity_stats["lines code"],
-            round(complexity_stats["stats"]["avg"], 2)
-            if complexity_stats["stats"]["avg"] else "",
-            round(complexity_stats["stats"]["stddev"], 2)
-            if complexity_stats["stats"]["stddev"] else "",
-            complexity_stats["stats"]["max"])
-        print("{:50} {:50} {:8} {:8} {:5} {:5} {:5} {}".format(
-            file[0],
-            file[1] if file[0] != file[1] else "",
-            "yes" if file_data["deleted"] else "",
-            file_data["commits"],
-            file_data["insertions"],
-            file_data["deletions"],
-            file_data["lines"],
-            complexity_str))
 
 
 def process_indent_stats(indent_stats):
@@ -308,17 +240,6 @@ def collect_stats_per_commit(repo):
     return result
 
 
-def print_commit_stats(commit_stats):
-    print("{:40} {:>6} {:>4} {:>4} {:>4}".format(
-        "commit", "lines", "avg", "sdev", "max"))
-    for stats_item in commit_stats:
-        stats = stats_item["stats"]
-        commit = stats_item["commit"]
-        print("{:40} {:>6} {:>4} {:>4} {:>4}".format(
-            str(commit), stats["cnt"], round(stats["avg"], 2),
-            round(stats["stddev"], 2), stats["max"]))
-
-
 def create_xlsx_report(xlsx_file, commit_stats, file_stats):
     print('Writing Excel report...')
     import os.path
@@ -434,12 +355,8 @@ def create_xlsx_report(xlsx_file, commit_stats, file_stats):
 load_settings()
 repo = import_repo(path)
 print("Repository imported")
-# print_config(repo)
-# print_branches(repo)
-# # print_commits(repo, print_files=False)
-files = collect_stats_per_file(repo)
-# print_file_stats(files, print_deleted=False)
 
+files = collect_stats_per_file(repo)
 commit_stats = collect_stats_per_commit(repo)
-# print_commit_stats(commit_stats)
+
 create_xlsx_report(xlsx_report, commit_stats, files)
