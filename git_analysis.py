@@ -148,12 +148,13 @@ def collect_stats_per_file(repo):
                 stats["insertions"]
             files[old_name]["deletions"] = files[old_name]["deletions"] + \
                 stats["deletions"]
-            if stats["deletions"] == stats["lines"] and stats["lines"] > 0:
-                files[old_name]["deleted"] = True
-            else:
+            file_complexity_stats = get_stats_for_file(tree_info, new_name)
+            if file_complexity_stats:
                 files[old_name]["complexity"].append({
                     "commit": str(commit),
-                    "stats": get_stats_for_file(tree_info, new_name)})
+                    "stats": file_complexity_stats})
+            else:
+                files[old_name]["deleted"] = True
     print("Done")
     return files
 
