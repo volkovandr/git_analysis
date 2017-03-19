@@ -6,16 +6,23 @@ from git.exc import InvalidGitRepositoryError
 
 import datetime
 import re
-from math import sqrt
-from itertools import zip_longest
+from itertools import cycle
 import sys
 import yaml
+from lib.indent_stats import *
 
 
 path = ''
 ignored_files = []
 xlsx_report = ''
 ignore_one_char_lines = True
+
+spinner = cycle(['-', '/', '|', '\\'])
+
+
+def print_spinner():
+    sys.stdout.write("\b%s" % next(spinner))
+    sys.stdout.flush()
 
 
 def load_settings():
@@ -80,10 +87,10 @@ def ignore_file(filename):
 
 
 def collect_stats_per_file(repo):
-    print("Collecting file statistics")
+    print("Collecting file statistics...")
     files = {}
     for commit in repo.iter_commits():
-        print(".", end="")
+        print_spinner()
         sys.stdout.flush()
         tree_info = collect_complexity_stats_from_file_tree(commit.tree)
         file_stats = commit.stats.files
@@ -113,27 +120,8 @@ def collect_stats_per_file(repo):
                     "stats": file_complexity_stats})
             else:
                 files[old_name]["deleted"] = True
-    print("Done")
+    print("\bDone")
     return files
-
-
-def process_indent_stats(indent_stats):
-    cnt = sum(indent_stats)
-    sum_ = sum([(i + 1) * indent_stats[i] for i in range(len(indent_stats))])
-    if cnt == 0:
-        avg = None
-    else:
-        avg = sum_ / float(cnt)
-    max_ = len(indent_stats)
-    if sum_ > 0:
-        stddev = sqrt(sum(
-            [((i + 1 - avg) ** 2) * indent_stats[i]
-             for i in range(len(indent_stats))]) / cnt)
-    else:
-        stddev = None
-    return {
-        "avg": avg, "sum": sum_, "cnt": cnt, "max": max_,
-        "stddev": stddev, "hist": indent_stats}
 
 
 def remove_python_docstring(lines):
@@ -206,17 +194,11 @@ def get_stats_for_file(tree_info, file):
             return tree_item["complexity"]
 
 
-def join_histogram(a, b):
-    return [
-        (a if a is not None else 0) + (b if b is not None else 0)
-        for (a, b) in zip_longest(a, b)]
-
-
 def collect_stats_per_commit(repo):
-    print("Collecting complexity statistics for each revision")
+    print("Collecting complexity statistics for each revision...")
     result = []
     for commit in repo.iter_commits():
-        print(".", end="")
+        print_spinner()
         sys.stdout.flush()
         tree_info = collect_complexity_stats_from_file_tree(commit.tree)
         indent_hist = []
@@ -229,7 +211,7 @@ def collect_stats_per_commit(repo):
             "commit": str(commit), "stats": stats,
             "date": datetime.datetime.fromtimestamp(
                 commit.committed_date).strftime('%Y-%m-%d %H:%M:%S')})
-    print("Done")
+    print("\bDone")
     return result
 
 
@@ -273,7 +255,10 @@ def create_xlsx_report(xlsx_file, commit_stats, file_stats):
         commit_stat_sheet.write_formula(
             row, 6, '=F' + row_str + '+E' + row_str + '*10+D' + row_str + '*5',
             indent_format,
-            value=stats["max"] + stats["stddev"] * 10 + stats["avg"] * 5)
+            value=(
+                (stats["max"] if stats["max"] else 0.0) +
+                (stats["stddev"] if stats["stddev"] else 0.0) * 10 +
+                (stats["avg"] if stats["avg"] else 0.0) * 5))
         row += 1
     commit_stat_sheet.set_column(0, 0, width=50)
     commit_stat_sheet.set_column(1, 1, width=20)

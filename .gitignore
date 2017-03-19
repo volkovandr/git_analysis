@@ -2,3 +2,4 @@
 *.xlsx#
 venv/
 *.sublime-*
+*.pyc
