@@ -10,3 +10,4 @@ ignored_files:
   - 'TODO'
   - 'Makefile'
   - '\.xlsx$'
+  - '^test'

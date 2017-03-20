@@ -5,12 +5,11 @@ from git import Repo
 from git.exc import InvalidGitRepositoryError
 
 import datetime
-import re
 from itertools import cycle
 import sys
 import yaml
 from lib.indent_stats import *
-
+from lib.file_names import *
 
 path = ''
 ignored_files = []
@@ -52,40 +51,6 @@ def import_repo(path):
         exit(1)
 
 
-def process_renamed_file(filename):
-    '''Processes renamed files in git
-    Takes filename that may have a format /path/{old_name => new_name}
-    Returns a tuple ('/path/old_name', '/path/new_name')
-    When no renaming happened then both old and new names are set to
-    the same values
-    '''
-    re_match_simple = re.search("^(?P<old>.+)( => )(?P<new>.+)$", filename)
-    if not re.search(".+ => .+", filename):
-        return filename, filename
-    re_match_curly = re.search(
-        "(?P<before>.*)(\{)(?P<old>.+)( => )(?P<new>.+)(\})(?P<after>.*)",
-        filename)
-    if re_match_curly:
-        match = re_match_curly
-        before = match.group("before")
-        after = match.group("after")
-    else:
-        match = re_match_simple
-        before = ""
-        after = ""
-    old = match.group("old")
-    new = match.group("new")
-    return (
-        "{}{}{}".format(before, old, after),
-        "{}{}{}".format(before, new, after))
-
-
-def ignore_file(filename):
-    for ignore_pattern in ignored_files:
-        if re.search(ignore_pattern, filename):
-            return True
-
-
 def collect_stats_per_file(repo):
     print("Collecting file statistics...")
     files = {}
@@ -96,7 +61,8 @@ def collect_stats_per_file(repo):
         file_stats = commit.stats.files
         for file in file_stats:
             old_name, new_name = process_renamed_file(file)
-            if ignore_file(old_name) or ignore_file(new_name):
+            if (ignore_file(old_name, ignored_files) or
+                    ignore_file(new_name, ignored_files)):
                 continue
             stats = file_stats[file]
             if new_name not in files:
@@ -175,7 +141,7 @@ def collect_complexity_stats_from_file_tree(tree):
     result = []
     for item in tree:
         if type(item).__name__ == 'Blob':
-            if ignore_file(item.path):
+            if ignore_file(item.path, ignored_files):
                 continue
             result.append({
                 "path": item.path, "size": item.size,
