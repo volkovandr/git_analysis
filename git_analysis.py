@@ -153,10 +153,14 @@ def collect_complexity_stats_from_file_tree(tree):
         if type(item).__name__ == 'Blob':
             if ignore_file(item.path, ignored_files):
                 continue
-            result.append({
-                "path": item.path, "size": item.size,
-                "mime_type": item.mime_type,
-                "complexity": analyze_complexity(item)})
+            try:
+                result.append({
+                    "path": item.path, "size": item.size,
+                    "mime_type": item.mime_type,
+                    "complexity": analyze_complexity(item)})
+            except UnicodeDecodeError as e:
+                print("Failed to decode file {}. Skipping...".format(
+                    item.path))
         elif type(item).__name__ == 'Tree':
             result = result + collect_complexity_stats_from_file_tree(item)
         else:

@@ -23,3 +23,4 @@ You may run them by executing `python -m unitest discover -v -s test` from the r
 ## Future develpment
 
 * Optimize the code
+* Add a better progress indicator
