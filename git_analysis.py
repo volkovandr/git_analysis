@@ -18,12 +18,15 @@ ignored_files = []
 xlsx_report = ''
 ignore_one_char_lines = True
 since = None
+commit_count = 0
 
 spinner = cycle(['-', '/', '|', '\\'])
 
 
-def print_spinner():
-    sys.stdout.write("\b%s" % next(spinner))
+def print_spinner(commit_no):
+    global commit_count
+    sys.stdout.write("\b\b\b\b\b\b{:>3}% {}".format(
+        round(commit_no / commit_count * 100), next(spinner)))
     sys.stdout.flush()
 
 
@@ -41,7 +44,6 @@ def load_settings():
             xlsx_report = file_data["report"]
             if "since" in file_data:
                 since = dateutil.parser.parse(file_data["since"])
-                print(since)
         except yaml.YAMLError as e:
             print("Cannot parse the settings file {}: {}".format(
                 settings_file, str(e)))
@@ -51,8 +53,18 @@ def load_settings():
 
 
 def import_repo(path):
+    global commit_count
     try:
-        return Repo(path)
+        repo = Repo(path)
+        for commit in repo.iter_commits():
+            if since:
+                if datetime.datetime.fromtimestamp(
+                        commit.committed_date) < since:
+                    continue
+            commit_count += 1
+        print("Repository imported, the number of commits is {}".format(
+            commit_count))
+        return repo
     except InvalidGitRepositoryError as e:
         print("Invalid git repository {}".format(str(e)))
         exit(1)
@@ -61,11 +73,13 @@ def import_repo(path):
 def collect_stats_per_file(repo):
     print("Collecting file statistics...")
     files = {}
+    commit_no = 1
     for commit in repo.iter_commits():
         if since:
             if datetime.datetime.fromtimestamp(commit.committed_date) < since:
                 continue
-        print_spinner()
+        print_spinner(commit_no)
+        commit_no += 1
         sys.stdout.flush()
         tree_info = collect_complexity_stats_from_file_tree(commit.tree)
         file_stats = commit.stats.files
@@ -177,11 +191,13 @@ def get_stats_for_file(tree_info, file):
 def collect_stats_per_commit(repo):
     print("Collecting complexity statistics for each revision...")
     result = []
+    commit_no = 1
     for commit in repo.iter_commits():
         if since:
             if datetime.datetime.fromtimestamp(commit.committed_date) < since:
                 continue
-        print_spinner()
+        print_spinner(commit_no)
+        commit_no += 1
         sys.stdout.flush()
         tree_info = collect_complexity_stats_from_file_tree(commit.tree)
         indent_hist = []
@@ -310,8 +326,6 @@ def create_xlsx_report(xlsx_file, commit_stats, file_stats):
 
 load_settings()
 repo = import_repo(path)
-print("Repository imported")
-
 files = collect_stats_per_file(repo)
 commit_stats = collect_stats_per_commit(repo)
 
