@@ -8,6 +8,7 @@ You need to install the following python packages:
 
 * xlsxwriter
 * gitpython
+* python-dateutil
 
 ## Usage
 

@@ -1,5 +1,6 @@
 path: .
 report: git_analysis.xlsx
+since: "2017-03-18"
 ignored_files:
   - '^e2e-test'
   - 'gitignore'

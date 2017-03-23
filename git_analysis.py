@@ -10,11 +10,14 @@ import sys
 import yaml
 from lib.indent_stats import *
 from lib.file_names import *
+import dateutil.parser
+
 
 path = ''
 ignored_files = []
 xlsx_report = ''
 ignore_one_char_lines = True
+since = None
 
 spinner = cycle(['-', '/', '|', '\\'])
 
@@ -29,12 +32,16 @@ def load_settings():
     global path
     global ignored_files
     global xlsx_report
+    global since
     with open(settings_file) as yml_file:
         try:
             file_data = yaml.load(yml_file)
             path = file_data["path"]
             ignored_files = file_data["ignored_files"]
             xlsx_report = file_data["report"]
+            if "since" in file_data:
+                since = dateutil.parser.parse(file_data["since"])
+                print(since)
         except yaml.YAMLError as e:
             print("Cannot parse the settings file {}: {}".format(
                 settings_file, str(e)))
@@ -55,6 +62,9 @@ def collect_stats_per_file(repo):
     print("Collecting file statistics...")
     files = {}
     for commit in repo.iter_commits():
+        if since:
+            if datetime.datetime.fromtimestamp(commit.committed_date) < since:
+                continue
         print_spinner()
         sys.stdout.flush()
         tree_info = collect_complexity_stats_from_file_tree(commit.tree)
@@ -164,6 +174,9 @@ def collect_stats_per_commit(repo):
     print("Collecting complexity statistics for each revision...")
     result = []
     for commit in repo.iter_commits():
+        if since:
+            if datetime.datetime.fromtimestamp(commit.committed_date) < since:
+                continue
         print_spinner()
         sys.stdout.flush()
         tree_info = collect_complexity_stats_from_file_tree(commit.tree)
