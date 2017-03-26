@@ -19,8 +19,9 @@ xlsx_report = ''
 ignore_one_char_lines = True
 since = None
 commit_count = 0
+show_deleted_files = False
 
-spinner = cycle(['-', '/', '|', '\\'])
+spinner = cycle(['-', '\\', '|', '/'])
 
 
 def print_spinner(commit_no):
@@ -36,6 +37,7 @@ def load_settings():
     global ignored_files
     global xlsx_report
     global since
+    global show_deleted_files
     with open(settings_file) as yml_file:
         try:
             file_data = yaml.load(yml_file)
@@ -44,6 +46,8 @@ def load_settings():
             xlsx_report = file_data["report"]
             if "since" in file_data:
                 since = dateutil.parser.parse(file_data["since"])
+            if "show_deleted_files" in file_data:
+                show_deleted_files = file_data["show_deleted_files"]
         except yaml.YAMLError as e:
             print("Cannot parse the settings file {}: {}".format(
                 settings_file, str(e)))
@@ -283,9 +287,10 @@ def create_xlsx_report(xlsx_file, commit_stats, file_stats):
     file_sheet.write(0, 13, "Stddev indent", header_format)
     file_sheet.write(0, 14, "Max indent", header_format)
     row = 1
+    global show_deleted_files
     for file in sorted([(files[file]["name"], file) for file in file_stats]):
         file_data = file_stats[file[1]]
-        if file_data["deleted"]:
+        if file_data["deleted"] and not show_deleted_files:
             continue
         complexity_stats = file_data["complexity"][0]["stats"]
         file_sheet.write(row, 0, file_data["name"])

@@ -1,6 +1,7 @@
 path: .
 report: git_analysis.xlsx
 since: "2017-03-18"
+show_deleted_files: True
 ignored_files:
   - '^e2e-test'
   - 'gitignore'
