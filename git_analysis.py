@@ -286,34 +286,39 @@ def create_xlsx_report(xlsx_file, commit_stats, file_stats):
     file_sheet.write(0, 12, "Avg indent", header_format)
     file_sheet.write(0, 13, "Stddev indent", header_format)
     file_sheet.write(0, 14, "Max indent", header_format)
-    row = 1
     global show_deleted_files
+    if show_deleted_files:
+        file_sheet.write(0, 15, "Deleted", header_format)
+    row = 1
     for file in sorted([(files[file]["name"], file) for file in file_stats]):
         file_data = file_stats[file[1]]
         if file_data["deleted"] and not show_deleted_files:
             continue
-        complexity_stats = file_data["complexity"][0]["stats"]
         file_sheet.write(row, 0, file_data["name"])
         file_sheet.write(row, 1, file_data["commits"])
-        file_sheet.write(
-            row, 12, complexity_stats["stats"]["avg"], indent_format)
-        file_sheet.write(
-            row, 13, complexity_stats["stats"]["stddev"], indent_format)
-        file_sheet.write(
-            row, 14, complexity_stats["stats"]["max"], indent_format)
-        for revision in range(0, 5):
-            if len(file_data["complexity"]) <= revision:
-                break
-            complexity_stats = file_data["complexity"][revision]["stats"]
-            file_sheet.write(row, 7 + revision, round(
-                (complexity_stats["stats"]["max"]
-                 if complexity_stats["stats"]["max"] else 0.0) +
-                (complexity_stats["stats"]["stddev"]
-                 if complexity_stats["stats"]["stddev"] else 0.0) * 10.0 +
-                (complexity_stats["stats"]["avg"]
-                 if complexity_stats["stats"]["avg"] else 0.0) * 5.0, 3))
+        if show_deleted_files and file_data["deleted"]:
+            file_sheet.write(row, 14, True)
+        if len(file_data["complexity"]):
+            complexity_stats = file_data["complexity"][0]["stats"]
             file_sheet.write(
-                row, 2 + revision, complexity_stats["lines code"])
+                row, 12, complexity_stats["stats"]["avg"], indent_format)
+            file_sheet.write(
+                row, 13, complexity_stats["stats"]["stddev"], indent_format)
+            file_sheet.write(
+                row, 14, complexity_stats["stats"]["max"], indent_format)
+            for revision in range(0, 5):
+                if len(file_data["complexity"]) <= revision:
+                    break
+                complexity_stats = file_data["complexity"][revision]["stats"]
+                file_sheet.write(row, 7 + revision, round(
+                    (complexity_stats["stats"]["max"]
+                     if complexity_stats["stats"]["max"] else 0.0) +
+                    (complexity_stats["stats"]["stddev"]
+                     if complexity_stats["stats"]["stddev"] else 0.0) * 10.0 +
+                    (complexity_stats["stats"]["avg"]
+                     if complexity_stats["stats"]["avg"] else 0.0) * 5.0, 3))
+                file_sheet.write(
+                    row, 2 + revision, complexity_stats["lines code"])
         # print(file_data)
         row += 1
 
