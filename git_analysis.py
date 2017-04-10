@@ -84,7 +84,6 @@ def collect_stats_per_file(repo):
                 continue
         print_spinner(commit_no)
         commit_no += 1
-        sys.stdout.flush()
         tree_info = collect_complexity_stats_from_file_tree(commit.tree)
         file_stats = commit.stats.files
         for file in file_stats:
@@ -145,7 +144,11 @@ def remove_python_docstring(lines):
 
 
 def analyze_complexity(blob):
-    lines = blob.data_stream.read().decode().split('\n')
+    try:
+        lines = blob.data_stream.read().decode('utf-8', 'ignore').split('\n')
+    except UnicodeDecodeError as e:
+        print(src(e))
+        exit(0)
     lines_filtered = [
         l for l in lines
         if len(l.strip()) > (1 if ignore_one_char_lines else 0)]
@@ -297,7 +300,7 @@ def create_xlsx_report(xlsx_file, commit_stats, file_stats):
         file_sheet.write(row, 0, file_data["name"])
         file_sheet.write(row, 1, file_data["commits"])
         if show_deleted_files and file_data["deleted"]:
-            file_sheet.write(row, 14, True)
+            file_sheet.write(row, 15, True)
         if len(file_data["complexity"]):
             complexity_stats = file_data["complexity"][0]["stats"]
             file_sheet.write(
