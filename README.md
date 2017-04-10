@@ -24,3 +24,4 @@ You may run them by executing `python -m unitest discover -v -s test` from the r
 
 * Optimize the code
 * Make it multiprocessed and analyze complexity for different files asynchronously
+* There is a HUUUGE bug: the files seem to be analyzed from the end to the beginning of the commit history. Therefore the files that were _created_ are marked as _deleted_ and only the files that were there from the very beginning are considered as not deleted.
